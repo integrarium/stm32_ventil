@@ -508,7 +508,7 @@ void Timer2_Config(int MCU_Frequency)
 void Timer1_Config(int MCU_Frequency)
   {
 
-	RCC_APB1PeriphClockCmd(RCC_APB2Periph_TIM1,ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1,ENABLE);
 	  TIM_TimeBaseInitTypeDef timer_base;
 	  TIM_TimeBaseStructInit(&timer_base);
 	  timer_base.TIM_Prescaler = 1;
