@@ -526,6 +526,8 @@ void Timer1_Config(int MCU_Frequency)
 	  outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
 	  TIM_OC1Init(TIM1, &outputChannelInit);
 
+	  TIM_Cmd(TIM1, ENABLE);
+
   }
 //----------------------------------------------------------------------------------
 void Timer3_Config(int MCU_Frequency)
