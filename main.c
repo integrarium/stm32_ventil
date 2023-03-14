@@ -1403,6 +1403,8 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 
 	  CorrConf[0]->PCA9534_1 &= ~0xf0; //разблокировка дверей,  выкл светофор, выкл пищалки
 
+	 if (SecondCounter-LightOnMoment>CorrConf[0]->LightTime)	  VentConf->LightOn=0; //выкл свет
+
 	  if (CorrConf[0]->PCA9534_0 & 1) //открыта дверь 1 (грязная)
 	    {
 		GateWayState=1;
@@ -1443,6 +1445,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		else
 		  {
 			GateWayState=0;
+	  LightOnMoment = SecondCounter; //взводим световой таймер
 		  }
 	    }
 	  break;
@@ -1455,6 +1458,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 			      {
 				    VentConf->filter_alarm = 2;
 				    GateWayState=0; // переходим в начальное состояние
+	  LightOnMoment = SecondCounter; //взводим световой таймер
 				    break;
 			      }
 			   else {
@@ -1466,26 +1470,20 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	  else  CorrConf[0]->PCA9534_1 |= 0x20; //вкл светофор
 
 	  if (SecondCounter-FanOnMoment > CorrConf[0]->BlowTime)
-       {
+         {
 		GateWayState=0;
-       }
+	  LightOnMoment = SecondCounter; //взводим световой таймер
+	  }
+		  
 	  break;
 
   default:
 		GateWayState=0;
+	  LightOnMoment = SecondCounter; //взводим световой таймер
 	  break;
   }
  }
 
-if (GateWayState==0)
-  {
-    if (SecondCounter-LightOnMoment>CorrConf[0]->LightTime)
-      {
-	  VentConf->LightOn=0; //выкл свет
-     }
-  }
-else 	LightOnMoment = SecondCounter; //если открыта дверь или идёт обработка - непрерывно взводим световой таймер, чтобы свет не погас
-	
 
 
 //меняем состояние светодиода
