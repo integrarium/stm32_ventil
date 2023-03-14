@@ -1445,7 +1445,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		else
 		  {
 			GateWayState=4;
-	  LightOnMoment = SecondCounter; //взводим световой таймер
 		  }
 	    }
 	  break;
@@ -1458,7 +1457,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 			      {
 				    VentConf->filter_alarm = 2;
 				    GateWayState=4; // переходим в начальное состояние
-	  LightOnMoment = SecondCounter; //взводим световой таймер
 				    break;
 			      }
 			   else {
@@ -1472,7 +1470,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	  if (SecondCounter-FanOnMoment > CorrConf[0]->BlowTime)
          {
 		GateWayState=4;
-	  LightOnMoment = SecondCounter; //взводим световой таймер
 	  }
 		  
 	  break;
