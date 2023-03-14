@@ -1421,7 +1421,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	  if ((CorrConf[0]->PCA9534_0 & 3)==0) //обе двери закрыты
 	    {
 		  CorrConf[0]->PCA9534_1 &= ~0x10; // выкл пищалки
-		  //LightOnMoment = SecondCounter; //взводим таймер выключения освещения
 		  TIM3->CCR3=0xffff;       //вкл вентилятора на максимум
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 	      VentConf->UV_on=1; //вкл УФ
@@ -1435,7 +1434,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		if (CorrConf[0]->WorkMode & 2)  //двусторонний шлюз
 		  {
-		  //LightOnMoment = SecondCounter;  //взводим таймер выключения освещения
 		  TIM3->CCR3=0xffff;       //вкл вентилятора на максимум
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 		  VentConf->UV_on=1; //вкл УФ
@@ -1444,7 +1442,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	      }
 		else
 		  {
-			LightOnMoment = SecondCounter;
 			GateWayState=0;
 		  }
 	    }
@@ -1471,7 +1468,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	  if (SecondCounter-FanOnMoment > CorrConf[0]->BlowTime)
        {
 		GateWayState=0;
-		LightOnMoment = SecondCounter;
        }
 	  break;
 
@@ -1481,11 +1477,15 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
   }
  }
 
-if (SecondCounter-LightOnMoment>CorrConf[0]->LightTime)
-     {
-	 VentConf->LightOn=0; //выкл свет
-
-	 }
+if (GateWayState==0)
+  {
+    if (SecondCounter-LightOnMoment>CorrConf[0]->LightTime)
+      {
+	  VentConf->LightOn=0; //выкл свет
+     }
+  }
+else 	LightOnMoment = SecondCounter; //если открыта дверь или идёт обработка - непрерывно взводим световой таймер, чтобы свет не погас
+	
 
 
 //меняем состояние светодиода
