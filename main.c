@@ -512,19 +512,21 @@ void Timer1_Config(int MCU_Frequency)
 	  TIM_TimeBaseInitTypeDef timer_base;
 	  TIM_TimeBaseStructInit(&timer_base);
 	  timer_base.TIM_Prescaler = 1;
-	  timer_base.TIM_Period = 2;
+	  timer_base.TIM_Period = 8;
 
 	  TIM_TimeBaseInit (TIM1, &timer_base);
 
 	  TIM_OCInitTypeDef outputChannelInit;
 
 	  TIM_OCStructInit(&outputChannelInit);
-	  outputChannelInit.TIM_Pulse = 1;			      //
+	  outputChannelInit.TIM_Pulse = 4;			      //
 	  outputChannelInit.TIM_OCMode = TIM_OCMode_PWM1;
 	  outputChannelInit.TIM_OutputState = TIM_OutputState_Disable;
 	  outputChannelInit.TIM_OutputNState = TIM_OutputNState_Enable;
 	  outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
 	  TIM_OC1Init(TIM1, &outputChannelInit);
+	  TIM1->BDTR|=0x8000;
+
 
 	  TIM_Cmd(TIM1, ENABLE);
 
