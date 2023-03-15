@@ -1399,6 +1399,8 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
   {
   case 0: //ждём открытия любой двери
    	  TIM3->CCR3=0;       //выкл вентилятора
+	  CorrConf[0]->power=0;
+	  VentConf->fan_power=0;
    	  VentConf->UV_on=0; //выкл УФ
 
 	  CorrConf[0]->PCA9534_1 &= ~0xf0; //разблокировка дверей,  выкл светофор, выкл пищалки
@@ -1424,6 +1426,8 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		  CorrConf[0]->PCA9534_1 &= ~0x10; // выкл пищалки
 		  TIM3->CCR3=0xffff;       //вкл вентилятора на максимум
+		  CorrConf[0]->power=0xffff;
+	          VentConf->fan_power=10000;
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 	      VentConf->UV_on=1; //вкл УФ
 			GateWayState=3;
@@ -1437,6 +1441,9 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		if (CorrConf[0]->WorkMode & 2)  //двусторонний шлюз
 		  {
 		  TIM3->CCR3=0xffff;       //вкл вентилятора на максимум
+		  CorrConf[0]->power=0xffff;
+	          VentConf->fan_power=10000;
+
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 		  VentConf->UV_on=1; //вкл УФ
 			GateWayState=3;
