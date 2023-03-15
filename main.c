@@ -643,11 +643,11 @@ void TIM3_IRQHandler (void)
 	power=0;
 	integrator=0;
       }
+    if ((CorrConf[0]->WorkMode & 1)==0) //режим "регулятор расхода"
+      {
     CorrConf[0]->power=power & 0xffff;
     VentConf->fan_power=power*10000/0xffff;
     CorrConf[0]->error=err_pres & 0xffff;
-    if ((CorrConf[0]->WorkMode & 1)==0) //режим "регулятор расхода"
-      {
     	TIM3->CCR3=power;  //перезапись расчитанной мощности в таймер
         TIM3->CCR4-=1;
       }
