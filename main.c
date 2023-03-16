@@ -1289,7 +1289,10 @@ integrator=0;
 //	dev_conf[1].devConfig[0x11]>>=4;
  //	CorrConf[1]->press_i2c=dev_conf[1].devConfig[0x11];
 	//CorrConf[1]->press_i2c = ( press - CorrConf[1]->press_offset + CorrConf[1]->tcomp_offset ) * (100+CorrConf[1]->kf_press)/100;
-    if (VentConf->set_select == 0) //первая уставка
+
+  if ((CorrConf[0]->WorkMode & 1)==0) //режим "шлюз" выключен
+         {
+          if (VentConf->set_select == 0) //первая уставка
 	  if (VentConf->fan_on != 0) //вентилятор включен
     	  if (abs(VentConf->cur_flaw - CorrConf[0]->ustav)<(CorrConf[0]->ustav / 5)) //если текущий поток в пределах -20% +20% от уставки - можно выдавать аварию фильтра
 	  if (CorrConf[1]->press_i2c/10 > VentConf->max_pres) VentConf->filter_alarm = 1;
@@ -1298,7 +1301,7 @@ integrator=0;
 	else VentConf->filter_alarm = 0;  //поток меньше 80% или больше 120% от заданного - нет аварии фильтра
       else VentConf->filter_alarm = 0;	//вентилятор выключен - нет аварии фильтра
     else VentConf->filter_alarm = 0;	//вторая уставка - нет аварии фильтра
-
+       }
 
 	  CorrConf[1]->i2c_success_count++;
        CorrConf[1]->i2c_sens_error = 0; //нет ошибок
