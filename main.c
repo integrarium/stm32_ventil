@@ -1465,7 +1465,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		if (SecondCounter-CheckOnMoment > CorrConf[0]->CheckTime)
 		       {
 			// Проверка давления на фильтре
-			   if (VentConf->min_pres > CorrConf[0]->press_i2c )
+			   if (VentConf->min_pres > CorrConf[1]->press_i2c )
 			      {
 				    VentConf->filter_alarm = 2;
 				    GateWayState=4; // переходим в начальное состояние
