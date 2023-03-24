@@ -471,20 +471,15 @@ unsigned char RTC_Init(void)
 		// Сброс данных в резервной области
 //		  RCC_BackupResetCmd(ENABLE);
 //		  RCC_BackupResetCmd(DISABLE);
-
 		// Установить источник тактирования кварц 32768
 //		  RCC_LSEConfig(RCC_LSE_ON);
 //		  while ((RCC->BDCR & RCC_BDCR_LSERDY) != RCC_BDCR_LSERDY) {}
 		RCC_RTCCLKConfig(RCC_RTCCLKSource_HSE_Div128);
-
 		RTC_SetPrescaler(125000-1); // Устанавливаем делитель, чтобы часы считали секунды
-
 		// Включаем RTC
 		RCC_RTCCLKCmd(ENABLE);
-
 		// Ждем синхронизацию
 		RTC_WaitForSynchro();
-
 		return 1;
 	}
 */
@@ -576,7 +571,7 @@ void Timer3_Config(int MCU_Frequency)
 	  TIM_ICInit(TIM3, &inputChannelInit);
 
 //	    TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
-	  TIM_ITConfig (TIM3, TIM_IT_Update, ENABLE);
+	  TIM_ITConfig (TIM3, TIM_IT_Update | TIM_IT_CC1 | TIM_IT_CC2, ENABLE);
 
 	  NVIC_EnableIRQ(TIM3_IRQn); //Разрешение прерывания
 	  TIM_Cmd(TIM3, ENABLE);
@@ -618,13 +613,28 @@ void USART2_IRQHandler(void)
 //------------- прерывание таймеров -------------------
 
 s32 integrator;
+u32 temp_tim3_1,temp_tim3_2;
+u16 HighWordTimCnt;
 
 void TIM3_IRQHandler (void)
   {
     s32 err_pres, power;
-	TIM_ClearFlag (TIM3, TIM_FLAG_Update);	    //сброс флага
+    u16 tim_flags;
+    u32 temp_tim3;
+
+    tim_flags = TIM3->SR;
+//    		TIM_GetFlagStatus(TIM3, TIM_IT_Update | TIM_IT_CC1 | TIM_IT_CC2);
+    TIM_ClearFlag (TIM3, TIM_FLAG_Update);	    //сброс флага
+//    if (tim_flags != TIM_IT_Update)
+//      {
+//    	 CorrConf[0]->FanTimCapt++;
+
+//      }
+    if (tim_flags & TIM_FLAG_Update)
+    {
 
 	err_pres=0;
+	HighWordTimCnt++;
 	if ((CorrConf[0]->ustav>0) && (VentConf->fan_on>0) ) //если уставка не ноль и включение разрешено - работает регулятор
       {
       err_pres=VentConf->cur_flaw;   //регулируем по потоку
@@ -645,13 +655,25 @@ void TIM3_IRQHandler (void)
       }
     if ((CorrConf[0]->WorkMode & 1)==0) //режим "регулятор расхода"
       {
-    CorrConf[0]->power=power & 0xffff;
-    VentConf->fan_power=power*10000/0xffff;
-    CorrConf[0]->error=err_pres & 0xffff;
+        CorrConf[0]->power=power & 0xffff;
+        VentConf->fan_power=power*10000/0xffff;
+        CorrConf[0]->error=err_pres & 0xffff;
     	TIM3->CCR3=power;  //перезапись расчитанной мощности в таймер
         TIM3->CCR4-=1;
       }
-
+    }
+    else if (tim_flags & TIM_FLAG_CC1)
+      {
+      temp_tim3 = (HighWordTimCnt<<16) | TIM3->CCR1;
+      CorrConf[0]->FanTimCapt = (temp_tim3-temp_tim3_1)>>8;
+      temp_tim3_1=temp_tim3;
+      }
+    else if (tim_flags & TIM_FLAG_CC2)
+      {
+      temp_tim3 = (HighWordTimCnt<<16) | TIM3->CCR2;
+      CorrConf[1]->FanTimCapt = (temp_tim3-temp_tim3_2)>>8;
+      temp_tim3_2=temp_tim3;
+      }
 
   }
 
@@ -1026,7 +1048,6 @@ int main(void)
     u32 Count;
     u16 Count_time;
     char debugstr[100];
-    u16 temp_tim3_1,temp_tim3_2;
     u16 PrevmSecondCounter; //предыдущее значение счётчика миллисекунд
     u8 hx710_phase=0;
     u16 GateWayState=0;
@@ -1111,6 +1132,7 @@ integrator=0;
     CorrConf[0]->temperature= ((1750.0-temperature_data[1])/5+25)*100;
 
     //авария мотора выдаётся, если в течение 1 секунды не было перепадов с таходатчика (частота ниже 1 Гц)
+/*
     if (mSecondCounter<PrevmSecondCounter)
       {
           if (TIM3->CCR1==temp_tim3_1)
@@ -1118,12 +1140,15 @@ integrator=0;
           else
         	  VentConf->fan_alarm &= ~1;
       temp_tim3_1=TIM3->CCR1;
+      CorrConf[0]->FanTimCapt = temp_tim3_1;
       if (TIM3->CCR2==temp_tim3_2)
     	  VentConf->fan_alarm |= 2;
       else
     	  VentConf->fan_alarm &= ~2;
       temp_tim3_2=TIM3->CCR2;
+      CorrConf[1]->FanTimCapt = temp_tim3_2;
       }
+*/
 
     if (CorrConf[0]->OurMBAddress==0) CorrConf[0]->OurMBAddress=1;
 
@@ -1290,9 +1315,9 @@ integrator=0;
  //	CorrConf[1]->press_i2c=dev_conf[1].devConfig[0x11];
 	//CorrConf[1]->press_i2c = ( press - CorrConf[1]->press_offset + CorrConf[1]->tcomp_offset ) * (100+CorrConf[1]->kf_press)/100;
 
-  if ((CorrConf[0]->WorkMode & 1)==0) //режим "шлюз" выключен
-         {
-          if (VentConf->set_select == 0) //первая уставка
+   if ((CorrConf[0]->WorkMode & 1)==0) //режим "шлюз" выключен
+     {
+	  if (VentConf->set_select == 0) //первая уставка
 	  if (VentConf->fan_on != 0) //вентилятор включен
     	  if (abs(VentConf->cur_flaw - CorrConf[0]->ustav)<(CorrConf[0]->ustav / 5)) //если текущий поток в пределах -20% +20% от уставки - можно выдавать аварию фильтра
 	  if (CorrConf[1]->press_i2c/10 > VentConf->max_pres) VentConf->filter_alarm = 1;
@@ -1301,7 +1326,7 @@ integrator=0;
 	else VentConf->filter_alarm = 0;  //поток меньше 80% или больше 120% от заданного - нет аварии фильтра
       else VentConf->filter_alarm = 0;	//вентилятор выключен - нет аварии фильтра
     else VentConf->filter_alarm = 0;	//вторая уставка - нет аварии фильтра
-       }
+   }
 
 	  CorrConf[1]->i2c_success_count++;
        CorrConf[1]->i2c_sens_error = 0; //нет ошибок
@@ -1465,7 +1490,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		if (SecondCounter-CheckOnMoment > CorrConf[0]->CheckTime)
 		       {
 			// Проверка давления на фильтре
-			   if (VentConf->min_pres > CorrConf[1]->press_i2c )
+			     if (VentConf->min_pres > CorrConf[0]->press_i2c )
 			      {
 				    VentConf->filter_alarm = 2;
 				    GateWayState=4; // переходим в начальное состояние
@@ -1483,7 +1508,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
          {
 		GateWayState=4;
 	  }
-		  
+
 	  break;
 
   default:
@@ -1501,4 +1526,3 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	  }
 
 }
-
