@@ -4,15 +4,15 @@
 //#include "stm32_adafruit_spi_lcd.h"
 
 
-#define Bank1_PSRAM1_ADDR   ((uint32_t)0x60000000)
+#define Bank1_PSRAM1_ADDR	((uint32_t)0x60000000)
 #define ADC1_DR_Address  0x4001244C
 #define SPI1_DR_Address  0x4001300C
 
 
-#define FlashLastPageAddr    ((uint32_t)0x08007c00)    //F103C8: 0x0801f800   //F103VG: 0x080ff800
-#define FlashPageSize     0x400
+#define FlashLastPageAddr    ((uint32_t)0x08007c00)	   //F103C8: 0x0801f800   //F103VG: 0x080ff800
+#define FlashPageSize	  0x400
 
-#define ModBusUartSpeed   19200
+#define ModBusUartSpeed	  19200
 
 #define BKPSize 10
 
@@ -26,19 +26,19 @@ u16 ADC_DMA_buffer[2];
 struct corr_conf_t
   {
     u16 reserved;		     //0  пока не исп
-    s16 press_i2c;           //1     давление
-    s16 temper_i2c;          //2     температура
-    u16 i2c_sens_error;      //3
-    u16 i2c_success_count;   //4     число удачных измерений
-    u16 OurMBAddress;        //5     адрес на модбасе
-    s16 press_offset;        //6     смещение нуля давления
-    s16 rawtemper_i2c;       //7    сырая температура
-    s16 rawpress_i2c;        //8    сырое давление
-    s16 kf_press;            //9    коэффициент коррекции давления
-    s16 temper_base;         //A температура настройки датчика, базовая температура. град * 100
-    u16 press_diap;          //B диапазон сенсора на нормируемом давлении диапазона измерения
-    s16 tcomp_offset;        //C значение термокомпенсации нуля
-    s16 tcomp_diap;          //D значение термокомпенсации диапазона
+    s16 press_i2c;			 //1	 давление
+    s16 temper_i2c;			 //2	 температура
+    u16 i2c_sens_error; 	 //3
+    u16 i2c_success_count;	 //4	 число удачных измерений
+    u16 OurMBAddress;		 //5	 адрес на модбасе
+    s16 press_offset;		 //6     смещение нуля давления
+    s16 rawtemper_i2c;		 //7	сырая температура
+    s16 rawpress_i2c;		 //8	сырое давление
+    s16 kf_press;		     //9	коэффициент коррекции давления
+    s16 temper_base;		 //A температура настройки датчика, базовая температура. град * 100
+    u16 press_diap;			 //B диапазон сенсора на нормируемом давлении диапазона измерения
+    s16 tcomp_offset;		 //C значение термокомпенсации нуля
+    s16 tcomp_diap;			 //D значение термокомпенсации диапазона
 
     u16 ustav;               //E уставка по давлению
     s16 error;               //F ошибка регулятора
@@ -57,7 +57,7 @@ struct corr_conf_t
     u16 LightTime;            //18  24d   время включения освещения
     u16 BlowTime;            //19  25d   время обработки
     u16 CheckTime;           //1a  26d   время от вкл мотора до начала проверки фильтра
-
+    u16 FanTimCapt;          //1b  27d
 
 
   };
@@ -68,7 +68,7 @@ struct vent_conf_t
   u16     set_select;        //41 выбор уставки
   u16     con_alarm;         //42
   u16     fan_alarm;         //43
-  u16     filter_alarm;      //44
+  u16     filter_alarm;	     //44
   u16     main_alarm;        //45
   u16     fan_overload;      //46
   u16     fan_power;         //47
@@ -99,18 +99,18 @@ struct vent_conf_t
 //--- интерфейсная структура -- для обмена по модбасу ---------
 struct dev_conf_t
   {
-    s16 devConfig[32];  //конфигурация регистров чтения-записи для модбаса (формат == структуре  corr_conf_t)
+	s16 devConfig[32];  //конфигурация регистров чтения-записи для модбаса (формат == структуре  corr_conf_t)
   };
 
 struct dev_conf_t dev_conf[3];
 
 //номера параметров (регистров) для записи во флеш (равны индексам двухбайтовых ячеек в структуре corr_conf_t)
 #define CH2 (sizeof(dev_conf[0])/2)
-//const uint8_t ParNumTable [] =    {5, 6, 9, 5+CH2, 6+CH2};
-//const uint8_t ParNumTable [] =    {5, 6, 9, 0xa, 0xb, 6+CH2, };
-const uint8_t ParNumTable [] =  {5, 6, 9, 0xa, 0xb, 6+CH2};
+//const uint8_t ParNumTable [] =	{5, 6, 9, 5+CH2, 6+CH2};
+//const uint8_t ParNumTable [] =	{5, 6, 9, 0xa, 0xb, 6+CH2, };
+const uint8_t ParNumTable [] =	{5, 6, 9, 0xa, 0xb, 6+CH2};
 const uint8_t ParNumTableSize = sizeof(ParNumTable)/sizeof(ParNumTable[0]);
-const uint8_t ParNumTableBKP [] =   {0x5A, 9+CH2, 0x54, 0xb+CH2, 0x52, 0x4b, 0x4c, 0x48, 0x49};
+const uint8_t ParNumTableBKP [] =	{0x5A, 9+CH2, 0x54, 0xb+CH2, 0x52, 0x4b, 0x4c, 0x48, 0x49};
 const uint8_t ParNumTableBKPSize = sizeof(ParNumTableBKP)/sizeof(ParNumTableBKP[0]);
 
 #undef CH2
@@ -120,5 +120,5 @@ struct vent_conf_t *VentConf;
 
 //struct corr_conf_t *CorrConf2;
 
-u8 RTCounter;        //счётчик обмена модбаса
-u8 frame[220];      //уарт буфер приёма/передачи
+u8 RTCounter;	     //счётчик обмена модбаса
+u8 frame[220];	    //уарт буфер приёма/передачи
