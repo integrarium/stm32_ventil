@@ -630,11 +630,16 @@ void TIM3_IRQHandler (void)
 //    	 CorrConf[0]->FanTimCapt++;
 
 //      }
-    if (tim_flags & TIM_FLAG_Update)
+    temp_tim3 = ((HighWordTimCnt+1)<<16);
+    if (((temp_tim3-temp_tim3_1)>>10) > 0xffff) CorrConf[0]->FanSpeed = 0; //скорость меньше порога
+    if (((temp_tim3-temp_tim3_2)>>10) > 0xffff) CorrConf[1]->FanSpeed = 0; //скорость меньше порога
+
+    if (tim_flags & TIM_FLAG_Update)  //частота = 48 МГц/65536 = 732 Гц
     {
 
 	err_pres=0;
 	HighWordTimCnt++;
+
 	if ((CorrConf[0]->ustav>0) && (VentConf->fan_on>0) ) //если уставка не ноль и включение разрешено - работает регулятор
       {
       err_pres=VentConf->cur_flaw;   //регулируем по потоку
@@ -665,13 +670,15 @@ void TIM3_IRQHandler (void)
     else if (tim_flags & TIM_FLAG_CC1)
       {
       temp_tim3 = (HighWordTimCnt<<16) | TIM3->CCR1;
-      CorrConf[0]->FanTimCapt = (temp_tim3-temp_tim3_1)>>8;
+//      CorrConf[0]->FanTimCapt = (temp_tim3-temp_tim3_1)>>10;
+      if (((temp_tim3-temp_tim3_1)>>10) < 0xffff) CorrConf[0]->FanSpeed = 46875/((temp_tim3-temp_tim3_1)>>10) ; //считаем скорость  46875 = 48e6 / 1024
       temp_tim3_1=temp_tim3;
       }
     else if (tim_flags & TIM_FLAG_CC2)
       {
       temp_tim3 = (HighWordTimCnt<<16) | TIM3->CCR2;
-      CorrConf[1]->FanTimCapt = (temp_tim3-temp_tim3_2)>>8;
+//      CorrConf[1]->FanTimCapt = (temp_tim3-temp_tim3_2)>>10;
+      if (((temp_tim3-temp_tim3_2)>>10) < 0xffff) CorrConf[1]->FanSpeed = 46875/((temp_tim3-temp_tim3_2)>>10) ; //скорость
       temp_tim3_2=temp_tim3;
       }
 
@@ -1326,6 +1333,10 @@ integrator=0;
 	else VentConf->filter_alarm = 0;  //поток меньше 80% или больше 120% от заданного - нет аварии фильтра
       else VentConf->filter_alarm = 0;	//вентилятор выключен - нет аварии фильтра
     else VentConf->filter_alarm = 0;	//вторая уставка - нет аварии фильтра
+   }
+   else //режим "шлюз"
+   {
+  //тут надо сформировать быты аварии фильтра и вентиляторов
    }
 
 	  CorrConf[1]->i2c_success_count++;
