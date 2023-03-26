@@ -57,7 +57,7 @@ struct corr_conf_t
     u16 LightTime;            //18  24d   время включения освещения
     u16 BlowTime;            //19  25d   время обработки
     u16 CheckTime;           //1a  26d   время от вкл мотора до начала проверки фильтра
-    u16 FanTimCapt;          //1b  27d  3b 59d
+    u16 FanSpeed;          //1b  27d  3b 59d скорость вентилятора в Гц
     u16 sw_i2c_connection;   //1c  28d
 
 
