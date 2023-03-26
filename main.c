@@ -1455,7 +1455,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	  if ((CorrConf[0]->PCA9534_0 & 3)==0) //обе двери закрыты
 	    {
 		  CorrConf[0]->PCA9534_1 &= ~0x10; // выкл пищалки
-		  TIM3->CCR3=0xffff;       //вкл вентилятора на максимум
+		  TIM3->CCR3=0x1fff;       //вкл вентилятора на максимум
 		  CorrConf[0]->power=0xffff;
 	          VentConf->fan_power=10000;
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
@@ -1470,7 +1470,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		if (CorrConf[0]->WorkMode & 2)  //двусторонний шлюз
 		  {
-		  TIM3->CCR3=0xffff;       //вкл вентилятора на максимум
+		  TIM3->CCR3=0x1fff;       //вкл вентилятора на максимум
 		  CorrConf[0]->power=0xffff;
 	          VentConf->fan_power=10000;
 
