@@ -506,8 +506,8 @@ void Timer1_Config(int MCU_Frequency)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1,ENABLE);
 	  TIM_TimeBaseInitTypeDef timer_base;
 	  TIM_TimeBaseStructInit(&timer_base);
-	  timer_base.TIM_Prescaler = 1;
-	  timer_base.TIM_Period = 8;
+	  timer_base.TIM_Prescaler = 0xffff;
+	  timer_base.TIM_Period = 9;
 
 	  TIM_TimeBaseInit (TIM1, &timer_base);
 
@@ -1378,7 +1378,7 @@ integrator=0;
 // CorrConf[0]->PCA9534_2 = SW_I2C_ReadControl_8Bit(SW_I2C2,0x40,2);
 
  // запись в PCA9534 новых значений
- SW_I2C_WriteControl_8Bit(SW_I2C2,0x40,3,~(CorrConf[0]->PCA9534_3));
+ CorrConf[0]->sw_i2c_connection = SW_I2C_WriteControl_8Bit(SW_I2C2,0x40,3,~(CorrConf[0]->PCA9534_3));
  SW_I2C_WriteControl_8Bit(SW_I2C2,0x40,1,(CorrConf[0]->PCA9534_1));
 
 
@@ -1429,7 +1429,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
   {
   case 0: //ждём открытия любой двери
    	  TIM3->CCR3=0;       //выкл вентилятора
-	  CorrConf[0]->power=0;
+//	  CorrConf[0]->power=0;
 	  VentConf->fan_power=0;
    	  VentConf->UV_on=0; //выкл УФ
 
@@ -1455,8 +1455,8 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	  if ((CorrConf[0]->PCA9534_0 & 3)==0) //обе двери закрыты
 	    {
 		  CorrConf[0]->PCA9534_1 &= ~0x10; // выкл пищалки
-		  TIM3->CCR3=0x1fff;       //вкл вентилятора на максимум
-		  CorrConf[0]->power=0xffff;
+		  TIM3->CCR3=CorrConf[0]->power;       //вкл вентилятора на максимум
+//		  CorrConf[0]->power=0xffff;
 	          VentConf->fan_power=10000;
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 	      VentConf->UV_on=1; //вкл УФ
@@ -1470,8 +1470,8 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		if (CorrConf[0]->WorkMode & 2)  //двусторонний шлюз
 		  {
-		  TIM3->CCR3=0x1fff;       //вкл вентилятора на максимум
-		  CorrConf[0]->power=0xffff;
+		  TIM3->CCR3=CorrConf[0]->power;       //вкл вентилятора на максимум
+//		  CorrConf[0]->power=0xffff;
 	          VentConf->fan_power=10000;
 
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
