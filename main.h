@@ -9,7 +9,7 @@
 #define SPI1_DR_Address  0x4001300C
 
 
-#define FlashLastPageAddr    ((uint32_t)0x08007c00)	   //F103C8: 0x0801f800   //F103VG: 0x080ff800
+#define FlashLastPageAddr    ((uint32_t)0x0801f800)	   //F103C8: 0x0801f800   //F103VG: 0x080ff800    //F103C6: 0x08007c00
 #define FlashPageSize	  0x400
 
 #define ModBusUartSpeed	  19200
@@ -35,15 +35,15 @@ struct corr_conf_t
     s16 rawtemper_i2c;		 //7	сырая температура
     s16 rawpress_i2c;		 //8	сырое давление
     s16 kf_press;		     //9	коэффициент коррекции давления
-    s16 temper_base;		 //A температура настройки датчика, базовая температура. град * 100
-    u16 press_diap;			 //B диапазон сенсора на нормируемом давлении диапазона измерения
-    s16 tcomp_offset;		 //C значение термокомпенсации нуля
-    s16 tcomp_diap;			 //D значение термокомпенсации диапазона
+    s16 temper_base;		 //A  10d температура настройки датчика, базовая температура. град * 100
+    u16 press_diap;			 //B  11d  диапазон сенсора на нормируемом давлении диапазона измерения
+    s16 tcomp_offset;		 //C  12d значение термокомпенсации нуля
+    s16 tcomp_diap;			 //D  13d значение термокомпенсации диапазона
 
-    u16 ustav;               //E уставка по давлению
-    s16 error;               //F ошибка регулятора
-    u16 power;               //10 мощность
-    s16 filter;              //11 фильтр накополение
+    u16 ustav;               //E 14d уставка по давлению
+    s16 error;               //F 15d ошибка регулятора
+    u16 power;               //10  16d мощность
+    s16 filter;              //11  17d фильтр накополение
 
     u16 PCA9534_0;               //12 18d регистр 0 только чтение (8 входных уровней PCA9534) в младшем байте
     u16 PCA9534_1;               //13 19d регистр 1 (8 выходных уровней PCA9534) в младшем байте
@@ -60,6 +60,7 @@ struct corr_conf_t
     u16 FanSpeed;          //1b  27d  3b 59d скорость вентилятора в Гц
     u16 sw_i2c_connection;   //1c  28d
 
+    u16 FFMnumber;         //le  30d общее количество ФВМ
 
   };
 
@@ -109,7 +110,7 @@ struct dev_conf_t dev_conf[3];
 #define CH2 (sizeof(dev_conf[0])/2)
 //const uint8_t ParNumTable [] =	{5, 6, 9, 5+CH2, 6+CH2};
 //const uint8_t ParNumTable [] =	{5, 6, 9, 0xa, 0xb, 6+CH2, };
-const uint8_t ParNumTable [] =	{5, 6, 9, 0xa, 0xb, 6+CH2};
+const uint8_t ParNumTable [] =	{5, 6, 9, 0xa, 0xb, 6+CH2, 0x17, 0x18, 0x19, 0x1a};
 const uint8_t ParNumTableSize = sizeof(ParNumTable)/sizeof(ParNumTable[0]);
 const uint8_t ParNumTableBKP [] =	{0x5A, 9+CH2, 0x54, 0xb+CH2, 0x52, 0x4b, 0x4c, 0x48, 0x49};
 const uint8_t ParNumTableBKPSize = sizeof(ParNumTableBKP)/sizeof(ParNumTableBKP[0]);
