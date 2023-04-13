@@ -624,7 +624,7 @@ void TIM3_IRQHandler (void)
 
     tim_flags = TIM3->SR;
 //    		TIM_GetFlagStatus(TIM3, TIM_IT_Update | TIM_IT_CC1 | TIM_IT_CC2);
-    TIM_ClearFlag (TIM3, TIM_FLAG_Update);	    //сброс флага
+    TIM_ClearFlag (TIM3, TIM_FLAG_Update | TIM_FLAG_CC1 | TIM_FLAG_CC2);	    //сброс флага
 //    if (tim_flags != TIM_IT_Update)
 //      {
 //    	 CorrConf[0]->FanTimCapt++;
@@ -671,14 +671,14 @@ void TIM3_IRQHandler (void)
       {
       temp_tim3 = (HighWordTimCnt<<16) | TIM3->CCR1;
 //      CorrConf[0]->FanTimCapt = (temp_tim3-temp_tim3_1)>>10;
-      if (((temp_tim3-temp_tim3_1)>>10) < 0xffff) CorrConf[0]->FanSpeed = 46875/((temp_tim3-temp_tim3_1)>>10) ; //считаем скорость  46875 = 48e6 / 1024
+      if (((temp_tim3-temp_tim3_1)>>10) < 0xffff) CorrConf[0]->FanSpeed = 48000000/(temp_tim3-temp_tim3_1) ; //считаем скорость
       temp_tim3_1=temp_tim3;
       }
     else if (tim_flags & TIM_FLAG_CC2)
       {
       temp_tim3 = (HighWordTimCnt<<16) | TIM3->CCR2;
 //      CorrConf[1]->FanTimCapt = (temp_tim3-temp_tim3_2)>>10;
-      if (((temp_tim3-temp_tim3_2)>>10) < 0xffff) CorrConf[1]->FanSpeed = 46875/((temp_tim3-temp_tim3_2)>>10) ; //скорость
+      if (((temp_tim3-temp_tim3_2)>>10) < 0xffff) CorrConf[1]->FanSpeed = 48000000/(temp_tim3-temp_tim3_2) ; //скорость
       temp_tim3_2=temp_tim3;
       }
 
@@ -1429,7 +1429,7 @@ if (hx710_phase==0) //была фаза давления
    }
 
 
-// **************** логика режима "шлюз" ************************
+// **************** логика режима "шлюз" ********************************************************
 u16 LightOnMoment, FanOnMoment, CheckOnMoment;
 
 if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
@@ -1470,7 +1470,10 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 //		  CorrConf[0]->power=0xffff;
 	          VentConf->fan_power=10000;
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
-	      VentConf->UV_on=1; //вкл УФ
+		  if ((CorrConf[0]->WorkMode & 4)==0)  //уф включен
+	       {VentConf->UV_on=1; //вкл УФ
+	       };
+
 			GateWayState=3;
 		  CheckOnMoment =SecondCounter; // взводим таймер проверки фильтра
 	    }
@@ -1486,7 +1489,10 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	          VentConf->fan_power=10000;
 
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
-		  VentConf->UV_on=1; //вкл УФ
+		  //VentConf->UV_on=1; //вкл УФ
+		  if  ((CorrConf[0]->WorkMode & 4)==0)   //уф включен
+		  	       { VentConf->UV_on=1; //вкл УФ
+		  	       };
 			GateWayState=3;
 		  CheckOnMoment =SecondCounter; // взводим таймер проверки фильтра
 	      }
