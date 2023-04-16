@@ -1518,6 +1518,14 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		CorrConf[0]->PCA9534_1 |= 0xc0; //блокировка двух дверей
 		if (SecondCounter-CheckOnMoment > CorrConf[0]->CheckTime)
 		       {
+		    // Проверка аварии мотора
+
+			if (CorrConf[0]->FanSpeed < 10 )           	  VentConf->fan_alarm |= 1;
+            else           	  VentConf->fan_alarm &= ~1;
+
+            if (CorrConf[1]->FanSpeed < 10 )           	  VentConf->fan_alarm |= 2;
+            else           	  VentConf->fan_alarm &= ~2;
+
 			// Проверка мин давления на фильтре
 		     if (VentConf->min_pres > CorrConf[0]->press_i2c )
 		      {
