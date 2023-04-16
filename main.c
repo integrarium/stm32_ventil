@@ -1530,9 +1530,9 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		      {
 			    VentConf->filter_alarm = 1;
 			    GateWayState=4; // переходим в начальное состояние
-			    break;
+//			    break;
 		      }
-
+		     else
 			     VentConf->filter_alarm = 0;  //сброс ошибки фильтра
 		       }
 	  //мигаем светофором
