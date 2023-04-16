@@ -1314,9 +1314,16 @@ integrator=0;
 //		  CorrConf[1]->filter = ((CorrConf[1]->filter*19)+  ( press32 + CorrConf[1]->tcomp_offset ) * (100+CorrConf[1]->kf_press)/100 + CorrConf[1]->tcomp_diap)/20;
 	 //	  CorrConf[1]->filter =   (( press32 + CorrConf[1]->tcomp_offset ) * (100+CorrConf[1]->kf_press)/100 + CorrConf[1]->tcomp_diap);
 
-
+   if ((CorrConf[0]->WorkMode & 1)==0) //режим "шлюз" выключен
+   {
 	  CorrConf[1]->press_i2c=CorrConf[1]->filter*10/16;
-//	 dev_conf[1].devConfig[0x11]=CorrConf[1]->press_i2c;
+   }
+   else
+   {
+		  CorrConf[0]->press_i2c=CorrConf[1]->filter*10/16;
+   }
+
+	  //	 dev_conf[1].devConfig[0x11]=CorrConf[1]->press_i2c;
 //	  CorrConf[1]->press_i2c/=2;
 //	dev_conf[1].devConfig[0x11]>>=4;
  //	CorrConf[1]->press_i2c=dev_conf[1].devConfig[0x11];
@@ -1336,7 +1343,7 @@ integrator=0;
    }
    else //режим "шлюз"
    {
-  //тут надо сформировать быты аварии фильтра и вентиляторов
+  //тут надо сформировать биты аварии фильтра и вентиляторов
    }
 
 	  CorrConf[1]->i2c_success_count++;
@@ -1383,6 +1390,9 @@ integrator=0;
  GPIO_PinRemapConfig( GPIO_Remap_I2C1 , ENABLE );
  GPIOB->CRH |= GPIO_CRH_CNF8_0 | GPIO_CRH_MODE8_1 | GPIO_CRH_MODE8_0 | GPIO_CRH_CNF9_0 | GPIO_CRH_MODE9_1 | GPIO_CRH_MODE9_0;
  GPIOB->ODR &= ~GPIO_ODR_ODR8 & ~GPIO_ODR_ODR9;
+
+
+
 
  // чтение PCA9534
  CorrConf[0]->PCA9534_0 = ~SW_I2C_ReadControl_8Bit(SW_I2C2,0x40,0);
@@ -1508,16 +1518,22 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		CorrConf[0]->PCA9534_1 |= 0xc0; //блокировка двух дверей
 		if (SecondCounter-CheckOnMoment > CorrConf[0]->CheckTime)
 		       {
-			// Проверка давления на фильтре
-			     if (VentConf->min_pres > CorrConf[0]->press_i2c )
-			      {
-				    VentConf->filter_alarm = 2;
-				    GateWayState=4; // переходим в начальное состояние
-				    break;
-			      }
-			   else {
-				  VentConf->filter_alarm = 0;
-			      }
+			// Проверка мин давления на фильтре
+		     if (VentConf->min_pres > CorrConf[0]->press_i2c )
+		      {
+			    VentConf->filter_alarm = 2;
+			    GateWayState=4; // переходим в начальное состояние
+			    break;
+		      }
+				// Проверка макс давления на фильтре
+		     if (VentConf->max_pres < CorrConf[0]->press_i2c )
+		      {
+			    VentConf->filter_alarm = 1;
+			    GateWayState=4; // переходим в начальное состояние
+			    break;
+		      }
+
+			     VentConf->filter_alarm = 0;  //сброс ошибки фильтра
 		       }
 	  //мигаем светофором
 	  if (mSecondCounter>500) CorrConf[0]->PCA9534_1 &= ~0x20; //выкл светофор
