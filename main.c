@@ -1090,7 +1090,7 @@ integrator=0;
         CorrConf[1]->OurMBAddress=3; //больше не участвует в работе // ardress modbus (датчик потока на двигателе)
         CorrConf[0]->temper_base=20; //больше не участвует в работе // температура базовая
     //    CorrConf[1]->temper_base=20; //температура базовая больше нет. настройка по первому регистру
-        CorrConf[0]->WorkMode=1;   //вкл режим "шлюз"
+        CorrConf[0]->WorkMode=1;   //вкл режим "шлюз" односторонний, уф включен
         VentConf->Kfactor = 77; //
         VentConf->flaw_set1 = 1000; //уставка потока 1
         VentConf->flaw_set1 = 500;  //уставка потока 2
@@ -1517,33 +1517,41 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
   case 3:  //ждём окончания цикла обработки
 		CorrConf[0]->PCA9534_1 |= 0xc0; //блокировка двух дверей
 		if (SecondCounter-CheckOnMoment > CorrConf[0]->CheckTime)
-		       {
+		  {
 		    // Проверка аварии мотора
-
-			if (CorrConf[0]->FanSpeed < 10 )           	  VentConf->fan_alarm |= 1;
+			if (CorrConf[0]->FanSpeed < 10 )
+			  {
+				VentConf->fan_alarm |= 1;
+			    GateWayState=4; // переходим в начальное состояние
+			    break;
+			  }
             else           	  VentConf->fan_alarm &= ~1;
 
-            if (CorrConf[1]->FanSpeed < 10 )           	  VentConf->fan_alarm |= 2;
-            else           	  VentConf->fan_alarm &= ~2;
-
 			// Проверка мин давления на фильтре
-		     if (VentConf->min_pres > CorrConf[0]->press_i2c )
+		     if (VentConf->min_pres*10 > CorrConf[0]->press_i2c )
 		      {
 			    VentConf->filter_alarm = 2;
 			    GateWayState=4; // переходим в начальное состояние
 			    break;
 		      }
 				// Проверка макс давления на фильтре
-		     if (VentConf->max_pres < CorrConf[0]->press_i2c )
+		     if (VentConf->max_pres*10 < CorrConf[0]->press_i2c )
 		      {
 			    VentConf->filter_alarm = 1;
-			    GateWayState=4; // переходим в начальное состояние
+//			    GateWayState=4; // переходим в начальное состояние
 //			    break;
 		      }
 		     else
 			     VentConf->filter_alarm = 0;  //сброс ошибки фильтра
-		       }
-	  //мигаем светофором
+
+// второй мотор
+		if (CorrConf[1]->FanSpeed < 10 )           	  VentConf->fan_alarm |= 2;
+        else           	  VentConf->fan_alarm &= ~2;
+// тут должна быть проверка второго фильтра
+
+		  }
+
+		//мигаем светофором
 	  if (mSecondCounter>500) CorrConf[0]->PCA9534_1 &= ~0x20; //выкл светофор
 	  else  CorrConf[0]->PCA9534_1 |= 0x20; //вкл светофор
 
