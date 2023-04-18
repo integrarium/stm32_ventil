@@ -1444,7 +1444,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		GateWayState=1;
 		CorrConf[0]->PCA9534_1 |= 0x70; //блокировка противоположной двери и вкл светофор, пищалка
-	   	VentConf->fan_alarm = 0; // сброс аварии мотора
 
 		VentConf->LightOn=1; //вкл свет
 	    };
@@ -1453,7 +1452,6 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		GateWayState=2;
 		CorrConf[0]->PCA9534_1 |= 0xb0; //блокировка противоположной двери, вкл светофор, пищалка
-	   	VentConf->fan_alarm = 0; // сброс аварии мотора
 
 		VentConf->LightOn=1; //вкл свет
 	    };
