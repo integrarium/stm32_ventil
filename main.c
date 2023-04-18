@@ -1461,6 +1461,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		  CorrConf[0]->PCA9534_1 &= ~0x10; // выкл пищалки
 		  TIM3->CCR3=CorrConf[0]->InFanPower*65535/10000;       //вкл вентилятора
+		   	VentConf->fan_power=CorrConf[0]->InFanPower;   //
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 		  if ((CorrConf[0]->WorkMode & 4)==0)  //уф включен
 	       {VentConf->UV_on=1; //вкл УФ
@@ -1479,6 +1480,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 		  if (CorrConf[0]->WorkMode & 2)  //двусторонний шлюз
 		  {
 	      TIM3->CCR3=CorrConf[0]->InFanPower*65535/10000;       //вкл вентилятора
+		   	VentConf->fan_power=CorrConf[0]->InFanPower;   //
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 		  //VentConf->UV_on=1; //вкл УФ
 		  if  ((CorrConf[0]->WorkMode & 4)==0)   //уф включен
