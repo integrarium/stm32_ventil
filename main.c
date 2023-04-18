@@ -1139,35 +1139,17 @@ integrator=0;
     //температура МК
     CorrConf[0]->temperature= ((1750.0-temperature_data[1])/5+25)*100;
 
-    //авария мотора выдаётся, если в течение 1 секунды не было перепадов с таходатчика (частота ниже 1 Гц)
-/*
-    if (mSecondCounter<PrevmSecondCounter)
-      {
-          if (TIM3->CCR1==temp_tim3_1)
-        	  VentConf->fan_alarm |= 1;
-          else
-        	  VentConf->fan_alarm &= ~1;
-      temp_tim3_1=TIM3->CCR1;
-      CorrConf[0]->FanTimCapt = temp_tim3_1;
-      if (TIM3->CCR2==temp_tim3_2)
-    	  VentConf->fan_alarm |= 2;
-      else
-    	  VentConf->fan_alarm &= ~2;
-      temp_tim3_2=TIM3->CCR2;
-      CorrConf[1]->FanTimCapt = temp_tim3_2;
-      }
-*/
-
     if (CorrConf[0]->OurMBAddress==0) CorrConf[0]->OurMBAddress=1;
 
 
-    if ((VentConf->filter_alarm>0) | (VentConf->fan_alarm>0)) VentConf->main_alarm=1;
+    if ((VentConf->filter_alarm>0) || (VentConf->fan_alarm>0)) VentConf->main_alarm=1;
 	  else VentConf->main_alarm=0;
 
 
     PrevmSecondCounter=mSecondCounter;
 
-	if (VentConf->fan_power==0) VentConf->fan_alarm = 0;
+    if (((CorrConf[0]->WorkMode & 1)==0)          //режим регулятора
+               && (VentConf->fan_power==0)) VentConf->fan_alarm = 0; // сброс аварии мотора
 
 	if (VentConf->set_select == 0) CorrConf[0]->ustav = VentConf->flaw_set1;
 	else CorrConf[0]->ustav = VentConf->flaw_set2;
@@ -1451,8 +1433,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
   {
   case 0: //ждём открытия любой двери
    	  TIM3->CCR3=0;       //выкл вентилятора
-//	  CorrConf[0]->power=0;
-	  VentConf->fan_power=0;
+   	VentConf->fan_power=0;   //
    	  VentConf->UV_on=0; //выкл УФ
 
 	  CorrConf[0]->PCA9534_1 &= ~0xf0; //разблокировка дверей,  выкл светофор, выкл пищалки
@@ -1463,6 +1444,8 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		GateWayState=1;
 		CorrConf[0]->PCA9534_1 |= 0x70; //блокировка противоположной двери и вкл светофор, пищалка
+	   	VentConf->fan_alarm = 0; // сброс аварии мотора
+
 		VentConf->LightOn=1; //вкл свет
 	    };
 
@@ -1470,6 +1453,8 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	    {
 		GateWayState=2;
 		CorrConf[0]->PCA9534_1 |= 0xb0; //блокировка противоположной двери, вкл светофор, пищалка
+	   	VentConf->fan_alarm = 0; // сброс аварии мотора
+
 		VentConf->LightOn=1; //вкл свет
 	    };
 	  break;
