@@ -958,6 +958,8 @@ void WriteFlashParam(uint8_t ParNum, u16 ParValue)
 	u16 idx;
 	idx = FlashSearch(ParNum);
     FLASH_Unlock();
+    __NOP();
+    __NOP();
 	if ((idx==FlashPageSize/2-1) && (((uint16_t*)(FlashLastPageAddr-ParNum*FlashPageSize))[idx])<0xffff)
 	  {
 	  FLASH_ErasePage(FlashLastPageAddr-ParNum*FlashPageSize);	  //страница полностью записана - надо стереть
@@ -966,7 +968,7 @@ void WriteFlashParam(uint8_t ParNum, u16 ParValue)
 		  FLASH_ProgramHalfWord  ( FlashLastPageAddr-ParNum*FlashPageSize,  ParValue  );   //чистая страница - пишем в начало
     else
 	   FLASH_ProgramHalfWord  ( FlashLastPageAddr-ParNum*FlashPageSize+2*idx+2,  ParValue  );  //пишем в свободную ячейку (следующую за занятой)
-	FLASH_Lock();
+//	FLASH_Lock();
   }
 
 void FlashFill (void)
@@ -1021,10 +1023,12 @@ void BKPFill (void)
     if (temp16!=buf[BKPSize-1])  //если данные BKP неверные - запишем туда из озу
       {
       BKPWriteAll();
+      VentConf->con_alarm|=1;
       }
     else
       {
     	for (i=0; i<ParNumTableBKPSize; i++) dev_conf[0].devConfig[ParNumTableBKP[i]]=buf[i]; //читаем все параметры из BKP
+        VentConf->con_alarm&=~1;
 
 	  }
 	}
@@ -1100,6 +1104,10 @@ integrator=0;
 
         VentConf->fan_on=0;
 //        VentConf->UVSecondCounter=BKP_ReadBackupRegister(BKP_DR1); //наработку в секундах берём из бакап-озу (на батарейке)
+        CorrConf[0]->PCA9534_3 =0xf0; //старший полубайт PCA9534 на выход
+        CorrConf[0]->LightTime =10;
+        CorrConf[0]->BlowTime =10;
+        CorrConf[0]->CheckTime =3;
 
      FlashFill();
      BKPFill();
@@ -1112,11 +1120,6 @@ integrator=0;
 
     SW_I2C_initial();
     i2c_port_initial(SW_I2C2);
-
-    CorrConf[0]->PCA9534_3 =0xf0; //старший полубайт PCA9534 на выход
-    CorrConf[0]->LightTime =10;
-    CorrConf[0]->BlowTime =10;
-    CorrConf[0]->CheckTime =3;
 
     // три старших бита порта PCA9534 на выход
 //    SW_I2C_WriteControl_8Bit(SW_I2C2,0x40,3,0x1f);
@@ -1476,9 +1479,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 	  if ((CorrConf[0]->PCA9534_0 & 3)==0) //обе двери закрыты
 	    {
 		  CorrConf[0]->PCA9534_1 &= ~0x10; // выкл пищалки
-		  TIM3->CCR3=CorrConf[0]->power;       //вкл вентилятора на максимум
-//		  CorrConf[0]->power=0xffff;
-	          VentConf->fan_power=(u32)(TIM3->CCR3)*10000/65535;
+		  TIM3->CCR3=CorrConf[0]->InFanPower*65535/10000;       //вкл вентилятора
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 		  if ((CorrConf[0]->WorkMode & 4)==0)  //уф включен
 	       {VentConf->UV_on=1; //вкл УФ
@@ -1496,10 +1497,7 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 
 		  if (CorrConf[0]->WorkMode & 2)  //двусторонний шлюз
 		  {
-		  TIM3->CCR3=CorrConf[0]->power;       //вкл вентилятора на максимум
-//		  CorrConf[0]->power=0xffff;
-          VentConf->fan_power=(u32)(TIM3->CCR3)*10000/65535;
-
+	      TIM3->CCR3=CorrConf[0]->InFanPower*65535/10000;       //вкл вентилятора
 		  FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
 		  //VentConf->UV_on=1; //вкл УФ
 		  if  ((CorrConf[0]->WorkMode & 4)==0)   //уф включен
