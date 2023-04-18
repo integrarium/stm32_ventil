@@ -958,8 +958,6 @@ void WriteFlashParam(uint8_t ParNum, u16 ParValue)
 	u16 idx;
 	idx = FlashSearch(ParNum);
     FLASH_Unlock();
-    __NOP();
-    __NOP();
 	if ((idx==FlashPageSize/2-1) && (((uint16_t*)(FlashLastPageAddr-ParNum*FlashPageSize))[idx])<0xffff)
 	  {
 	  FLASH_ErasePage(FlashLastPageAddr-ParNum*FlashPageSize);	  //страница полностью записана - надо стереть
@@ -968,7 +966,7 @@ void WriteFlashParam(uint8_t ParNum, u16 ParValue)
 		  FLASH_ProgramHalfWord  ( FlashLastPageAddr-ParNum*FlashPageSize,  ParValue  );   //чистая страница - пишем в начало
     else
 	   FLASH_ProgramHalfWord  ( FlashLastPageAddr-ParNum*FlashPageSize+2*idx+2,  ParValue  );  //пишем в свободную ячейку (следующую за занятой)
-//	FLASH_Lock();
+	FLASH_Lock();
   }
 
 void FlashFill (void)
@@ -1520,8 +1518,8 @@ if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
 			if (CorrConf[0]->FanSpeed < 10 )
 			  {
 				VentConf->fan_alarm |= 1;
-			    GateWayState=4; // переходим в начальное состояние
-			    break;
+//			    GateWayState=4; // переходим в начальное состояние
+//			    break;
 			  }
             else           	  VentConf->fan_alarm &= ~1;
 
