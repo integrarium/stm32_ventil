@@ -1421,7 +1421,9 @@ if (hx710_phase==0) //была фаза давления
      }
    }
 
-
+if (VentConf->debug ==1 ) { CorrConf[0]->WorkMode &= ~0x01; } // бит сбрасываем
+else { CorrConf[0]->WorkMode |= 0x01; } // бит устанавливаем
+	    
 // **************** логика режима "шлюз" ********************************************************
 u16 LightOnMoment, FanOnMoment, CheckOnMoment;
 
