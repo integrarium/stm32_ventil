@@ -63,6 +63,8 @@ struct corr_conf_t
     u16 InFanPower;         //ld  29d задаваемая мощность вентилятора, %*100
     u16 FFMnumber;         //le  30d общее количество ФВМ
 
+    u16 TrnFWMData;        //1f  31d - байт для отправки на удалённый ФВМ
+
   };
 
 struct vent_conf_t
@@ -97,6 +99,8 @@ struct vent_conf_t
   u16     Version;           //5B
   u16     HX711_temper;      //5C
   u16     HX711_press;       //5D
+  u16     debug;             //5e debug
+  u16     RcvFWMData;        //5f  95d - байт, считанный с удалённого ФВМ,
   };
 
 //--- интерфейсная структура -- для обмена по модбасу ---------
