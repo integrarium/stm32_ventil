@@ -51,7 +51,6 @@ struct corr_conf_t
 
     s16 temperature;         //15  21d   температура
     u16 rheostat;            //16  22d   положение резистора
-//    u16 PCA9534_2;               //17  23d    регистр 2 только чтение (инверсия входов PCA9534) в младшем байте
 
     u16 WorkMode;            //17  23d   режим работы контролллера
     u16 LightTime;            //18  24d   время включения освещения
@@ -76,7 +75,7 @@ struct vent_conf_t
   u16     filter_alarm;	     //44
   u16     main_alarm;        //45
   u16     fan_overload;      //46
-  u16     fan_power;         //47
+  u16     fan_power;         //47 71d  Загрузка мотора
   u16     flaw_set1;         //48 уставка 1
   u16     flaw_set2;         //49 уставка 2
   s16     cur_flaw;          //4A скорость потока = K*sqrt(давление)  только для 1го канала
