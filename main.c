@@ -634,40 +634,40 @@ void TIM3_IRQHandler (void)
 
     if (tim_flags & TIM_FLAG_Update)  //частота = 48 МГц/65536 = 732 Гц
     {
-    temp_tim3 = ((HighWordTimCnt+1)<<16);
+    	temp_tim3 = ((HighWordTimCnt+1)<<16);
 
-    if (((temp_tim3-temp_tim3_1)>>10) > 0xffff) CorrConf[1]->FanSpeed = 0; //скорость меньше порога
-    if (((temp_tim3-temp_tim3_2)>>10) > 0xffff) CorrConf[0]->FanSpeed = 0; //скорость меньше порога
+    	if (((temp_tim3-temp_tim3_1)>>10) > 0xffff) CorrConf[1]->FanSpeed = 0; //скорость меньше порога
+    	if (((temp_tim3-temp_tim3_2)>>10) > 0xffff) CorrConf[0]->FanSpeed = 0; //скорость меньше порога
 
-    err_pres=0;
-	HighWordTimCnt++;
+    	err_pres=0;
+    	HighWordTimCnt++;
 
-	if ((CorrConf[0]->ustav>0) && (VentConf->fan_on>0) ) //если уставка не ноль и включение разрешено - работает регулятор
-      {
-      err_pres=VentConf->cur_flaw;   //регулируем по потоку
-	  err_pres-=(CorrConf[0]->ustav);   //разница потока
-	  integrator-=err_pres; 	  //накопление ошибки в интеграторе
-	 // integrator+=16;
-	  if (integrator<-(0xffff<<8)) integrator=-(0xffff<<8);    //ограничение интегратора
-      if (integrator> (0xffff<<8)) integrator= (0xffff<<8);    //ограничение интегратора
-//	  power=(integrator>>5)-(err_pres<<6);	//считаем мощность. коэффициенты заданы степенями двойки
-	  power=(integrator>>8);  //считаем мощность. коэффициенты заданы степенями двойки
-	  if (power<0) power=0; 		//мощность не может быть отрицательной
-      if (power>0xffff) power=0xffff;	    //мощность не может быть > 100%
-      }
-    else
-      {
-	power=0;
-	integrator=0;
-      }
-    if ((CorrConf[0]->WorkMode & 1)==0) //режим "регулятор расхода"
-      {
-        CorrConf[0]->power=power & 0xffff;
-        VentConf->fan_power=power*10000/0xffff;
-        CorrConf[0]->error=err_pres & 0xffff;
-    	TIM3->CCR3=power;  //перезапись расчитанной мощности в таймер
-        TIM3->CCR4-=1;
-      }
+    	if ((CorrConf[0]->ustav>0) && (VentConf->fan_on>0) ) //если уставка не ноль и включение разрешено - работает регулятор
+    	{
+    		err_pres=VentConf->cur_flaw;   //регулируем по потоку
+    		err_pres-=(CorrConf[0]->ustav);   //разница потока
+    		integrator-=err_pres; 	  //накопление ошибки в интеграторе
+    		// integrator+=16;
+    		if (integrator<-(0xffff<<8)) integrator=-(0xffff<<8);    //ограничение интегратора
+    		if (integrator> (0xffff<<8)) integrator= (0xffff<<8);    //ограничение интегратора
+    		//		  power=(integrator>>5)-(err_pres<<6);	//считаем мощность. коэффициенты заданы степенями двойки
+    		power=(integrator>>8);  //считаем мощность. коэффициенты заданы степенями двойки
+    		if (power<0) power=0; 		//мощность не может быть отрицательной
+    		if (power>0xffff) power=0xffff;	    //мощность не может быть > 100%
+    	}
+    	else
+    	{
+    		power=0;
+    		integrator=0;
+    	}
+      	if ((CorrConf[0]->WorkMode & 1)==0) //если режим "регулятор расхода" - бит в 0
+    	{
+    		CorrConf[0]->power=power & 0xffff;
+    		VentConf->fan_power=power*10000/0xffff;
+    		CorrConf[0]->error=err_pres & 0xffff;
+    		TIM3->CCR3=power;  //перезапись расчитанной мощности в таймер
+    		TIM3->CCR4-=1;
+    	}
     }
     else if (tim_flags & TIM_FLAG_CC1)
       {
@@ -1062,6 +1062,8 @@ int main(void)
     u16 PrevmSecondCounter; //предыдущее значение счётчика миллисекунд
     u8 hx710_phase=0;
     u16 GateWayState=0;
+    u16 Slave_Err; // ошибки со Slave
+    u16 Slave_Err2;
 
 	//u16 kf_press1, kf_press2; // переменные коэф пропорциональности
 
@@ -1100,7 +1102,8 @@ int main(void)
     VentConf->flaw_set1 = 500;  //уставка потока 2
     VentConf->min_pres = 60; //нижнее давление для определения аварии фильтра
     VentConf->max_pres = 350; //верхнее давление для определения аварии фильтра
-    VentConf->Version = 403; //Номер версии прошивки
+    //VentConf->Version = 403; //Номер версии прошивки
+    VentConf->Version = 404; //добавлена работа со слейвом
     CorrConf[0]->FFMnumber=1; //количество ФВМ
     CorrConf[0]->InFanPower=1000; // мощность мотора
     VentConf->fan_on=0;
@@ -1149,9 +1152,10 @@ int main(void)
 
     	PrevmSecondCounter=mSecondCounter;
 
-    	if (((CorrConf[0]->WorkMode & 1)==0)          //режим регулятора
-    			&& (VentConf->fan_power==0))
-    		VentConf->fan_alarm = 0; // сброс аварии мотора
+    	if (((CorrConf[0]->WorkMode & 1)==0) && (VentConf->fan_power==0)) //если режим регулятора и мощность =0
+    		{
+    			VentConf->fan_alarm = 0; // сброс аварии мотора
+    		}
 
     	if (VentConf->set_select == 0) CorrConf[0]->ustav = VentConf->flaw_set1;
     	else CorrConf[0]->ustav = VentConf->flaw_set2;
@@ -1334,7 +1338,7 @@ int main(void)
 	    	else //режим "шлюз"
 	    	{
 	    		// главный регистр аварии - индикация аварии на главном экране
-	    		if ((VentConf->filter_alarm>0) || (VentConf->fan_alarm>0) || (VentConf->con_alarm >0) || (VentConf->UVHours >1000)) VentConf->main_alarm=1;
+	    		if (((VentConf->filter_alarm) >0) || (VentConf->fan_alarm>0) || (VentConf->con_alarm >0) || (VentConf->UVHours > 1000)  ) VentConf->main_alarm=1;
 	    		else VentConf->main_alarm=0;
 	    	}
 
@@ -1381,21 +1385,35 @@ int main(void)
 
 	    //	    	    CorrConf[0]->PCA9534_0 = ~SW_I2C_ReadControl_8Bit_OnlyData(SW_I2C2,0x2);
 	    //	    	    CorrConf[0]->sw_i2c_connection = SW_I2C_WriteControl_8Bit_OnlyRegAddr(SW_I2C2,0x2,(CorrConf[0]->PCA9534_1));
-	                    VentConf->RcvFWMData = ~SW_I2C_ReadControl_8Bit(SW_I2C2,0x2,1);
-	    	    	    if (SW_I2C_WriteControl_8Bit(SW_I2C2,0x2,0,(CorrConf[0]->TrnFWMData)) == 1)
-	    	    	    			CorrConf[0]->sw_i2c_connection|=2;
-	    	    	    else CorrConf[0]->sw_i2c_connection&=~2; //бит наличия удалённого ФВМ
+	    //VentConf->RcvFWMData = SW_I2C_ReadControl_8Bit(SW_I2C2,0x0f,1); // Прием байта от slave 0x0f
+
+	    if (SW_I2C_WriteControl_8Bit(SW_I2C2,0x0f,0,(CorrConf[0]->TrnFWMData)) == 1) // Передача байта
+	    	CorrConf[0]->sw_i2c_connection|=2;
+	    else CorrConf[0]->sw_i2c_connection&=~2; //бит наличия удалённого ФВМ
+
+	    if (CorrConf[0]->sw_i2c_connection&2)
+	    {
+	    	Slave_Err = SW_I2C_ReadControl_8Bit(SW_I2C2,0x0F,1);
+	    	Slave_Err2 = SW_I2C_ReadControl_8Bit(SW_I2C2,0x0F,1);
+	    	if (Slave_Err == Slave_Err2)   VentConf->RcvFWMData = Slave_Err;
+	    };
 
 // ------------------------ общение с PCA9534 -------------------------------------------------------------
 
-	    CorrConf[0]->PCA9534_0 = ~SW_I2C_ReadControl_8Bit(SW_I2C2,0x40,0);
-  // CorrConf[0]->PCA9534_2 = SW_I2C_ReadControl_8Bit(SW_I2C2,0x40,2);
 
 	    // запись в PCA9534 новых значений
 	    	    if ( SW_I2C_WriteControl_8Bit(SW_I2C2,0x40,3,~(CorrConf[0]->PCA9534_3))== 1)
 		                             CorrConf[0]->sw_i2c_connection|=1;
                 else CorrConf[0]->sw_i2c_connection&=~1; //бит наличия релейной платы
 	    SW_I2C_WriteControl_8Bit(SW_I2C2,0x40,1,(CorrConf[0]->PCA9534_1));
+
+	    // CorrConf[0]->PCA9534_2 = SW_I2C_ReadControl_8Bit(SW_I2C2,0x40,2);
+       if (CorrConf[0]->sw_i2c_connection&1)
+       {
+    	   temp16 = ~SW_I2C_ReadControl_8Bit(SW_I2C2,0x40,0);
+    	   i = ~SW_I2C_ReadControl_8Bit(SW_I2C2,0x40,0);
+    	   if (temp16 == i)   CorrConf[0]->PCA9534_0 = temp16;
+       }
 
 
 //	    Count_time++;
@@ -1427,13 +1445,16 @@ int main(void)
 	    	}
 	    }
 
+
+	    Slave_Err = VentConf->RcvFWMData; //записываем значение из регистра
+
 // **************** логика режима "шлюз" ********************************************************
 
 	    // обработка регистра debug
 	    if (VentConf->debug ==1 ) { CorrConf[0]->WorkMode &= ~0x01; } // бит шлюза сбрасываем
 	    else { CorrConf[0]->WorkMode |= 0x01; } // бит шлюза устанавливаем
 
-	    if (CorrConf[0]->WorkMode & 1) //режим "шлюз"
+	    if ((CorrConf[0]->WorkMode & 1 )== 1) //режим "шлюз"
 	    {
 	    	VentConf->fan_on=0; //выкл регулятора
 
@@ -1444,6 +1465,9 @@ int main(void)
 	    		VentConf->fan_power=0;   //
 	    		VentConf->UV_on=0; //выкл УФ
 	    		CorrConf[0]->PCA9534_1 &= ~0xf0; //разблокировка дверей,  выкл светофор, выкл пищалки
+				
+	    		CorrConf[0]->TrnFWMData=0; // выключаем мотор на slave
+				
 	    		if (SecondCounter-LightOnMoment>CorrConf[0]->LightTime)	  VentConf->LightOn=0; //выкл свет
 	    		if (CorrConf[0]->PCA9534_0 & 1) //открыта дверь 1 (грязная)
 	    		{
@@ -1459,17 +1483,21 @@ int main(void)
 	    		};
 	    		break;
 
-	    	case 1: //ждём закрытия двери 1
+	    	case 1: //ждём закрытия двери 1 (серая зона)
 	    		if ((CorrConf[0]->PCA9534_0 & 3)==0) //обе двери закрыты
 	    		{
 	    			CorrConf[0]->PCA9534_1 &= ~0x10; // выкл пищалки
 	    			TIM3->CCR3=CorrConf[0]->InFanPower*65535/10000;       //вкл вентилятора
-	    			VentConf->fan_power=CorrConf[0]->InFanPower;   //
+	    			VentConf->fan_power=CorrConf[0]->InFanPower;   // записываем значение в регистр мощности для индикации обработки в панели
 	    			FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
-	    			if ((CorrConf[0]->WorkMode & 4)==0)  //уф включен
+
+	    			CorrConf[0]->TrnFWMData=1; //Включаем мотор на Slave
+					
+	    			if ((CorrConf[0]->WorkMode & 4)==0 )  //уф включен == 0
 	    			{
 	    				VentConf->UV_on=1; //вкл УФ
 	    			};
+
 	    			GateWayState=3;
 	    			CheckOnMoment =SecondCounter; // взводим таймер проверки фильтра
 	    		}
@@ -1479,16 +1507,19 @@ int main(void)
 	    		if ((CorrConf[0]->PCA9534_0 & 3)==0) //обе двери закрыты
 	    		{
 	    			CorrConf[0]->PCA9534_1 &= ~0x10; // выкл пищалки
-	    			if (CorrConf[0]->WorkMode & 2)  //двусторонний шлюз
+	    			if ((CorrConf[0]->WorkMode & 2) == 2)  //двухсторонний шлюз
 	    			{
 	    				TIM3->CCR3=CorrConf[0]->InFanPower*65535/10000;       //вкл вентилятора
-	    				VentConf->fan_power=CorrConf[0]->InFanPower;   //
+	    				VentConf->fan_power=CorrConf[0]->InFanPower;   // записываем значение в регистр мощности для индикации обработки в панели
 	    				FanOnMoment=SecondCounter; //взводим таймер выключения вентилятора
-	    				//VentConf->UV_on=1; //вкл УФ
-	    				if  ((CorrConf[0]->WorkMode & 4)==0)   //уф включен
+
+	    				CorrConf[0]->TrnFWMData=1; //Включаем мотор на Slave
+
+	    				if  ((CorrConf[0]->WorkMode & 4) == 0 )   //уф включен - бит =0
 	    				{
 	    					VentConf->UV_on=1; //вкл УФ
 	    				};
+
 	    				GateWayState=3;
 	    				CheckOnMoment =SecondCounter; // взводим таймер проверки фильтра
 	    			}
@@ -1515,6 +1546,23 @@ int main(void)
 	    		//если время ожидания проверки закончилось - начинаем проверку значений
 	    		if (SecondCounter-CheckOnMoment > CorrConf[0]->CheckTime)
 	    		{
+	    			if ((Slave_Err & 1) == 1) //авария порыв фильтра на Slave
+	    			{
+	    				VentConf->filter_alarm |= 16;
+	    				GateWayState=4; // переходим с ошибкой в начальное состояние
+	    			}
+	    			else
+	    				VentConf->filter_alarm &= ~16;
+
+	    			if ((Slave_Err & 2) == 2) //общая авария на Slave
+	    			{
+	    				VentConf->filter_alarm |= 32;
+	    			}
+	    			else
+	    				VentConf->filter_alarm &= ~32;
+
+	    			VentConf->filter_alarm &= ~96; // обнуляем старшие биты
+
 	    			// Проверка аварии 1 мотора
 	    			if (CorrConf[0]->FanSpeed < 5 )
 	    			{
